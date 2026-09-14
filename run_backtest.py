@@ -15,11 +15,15 @@ import argparse
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from dotenv import load_dotenv
 
+from ai.trade_journal import generate_trade_journal
 from backtester.engine import run_backtest, run_buy_and_hold
 from backtester.metrics import summarize
 from data.loader import load_price_data
 from strategies.moving_average import generate_signals
+
+load_dotenv()
 
 RESULTS_DIR = Path(__file__).parent / "results"
 
@@ -36,6 +40,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--risk-per-trade-pct", type=float, default=0.01)
     p.add_argument("--commission-pct", type=float, default=0.001)
     p.add_argument("--no-plot", action="store_true", help="Skip saving the equity curve chart")
+    p.add_argument(
+        "--ai-journal", action="store_true",
+        help="Ask Claude to write a plain-English review of the trade log (needs ANTHROPIC_API_KEY)",
+    )
     return p.parse_args()
 
 
@@ -84,6 +92,24 @@ def main() -> None:
         out_path = RESULTS_DIR / f"{args.ticker}_equity_curve.png"
         fig.savefig(out_path)
         print(f"\nSaved equity curve chart to {out_path}")
+
+    if args.ai_journal:
+        strategy_desc = (
+            f"Moving average crossover (short={args.short_window}, long={args.long_window}), "
+            f"stop-loss={args.stop_loss_pct:.1%}, risk/trade={args.risk_per_trade_pct:.1%}"
+        )
+        try:
+            journal = generate_trade_journal(
+                args.ticker, strategy_desc, strategy_metrics, strategy_result.trades
+            )
+        except RuntimeError as e:
+            print(f"\n[AI journal skipped] {e}")
+        else:
+            print(f"\n--- AI trade journal ---\n{journal}")
+            RESULTS_DIR.mkdir(exist_ok=True)
+            journal_path = RESULTS_DIR / f"{args.ticker}_trade_journal.md"
+            journal_path.write_text(journal, encoding="utf-8")
+            print(f"\nSaved AI trade journal to {journal_path}")
 
 
 if __name__ == "__main__":

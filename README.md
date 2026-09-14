@@ -24,7 +24,7 @@ notebooks/     exploration and result plots
 1. ✅ Backtester + a simple strategy (moving-average crossover) on free historical data, with
    stop-loss and fixed-fractional position sizing baked in — no API keys needed.
 2. ✅ Comparison against buy-and-hold (built into `run_backtest.py`'s output).
-3. AI trade journal on top of backtest results.
+3. ✅ AI trade journal on top of backtest results (`--ai-journal`, needs `ANTHROPIC_API_KEY`).
 4. Paper trading against live data (Interactive Brokers).
 5. Streamlit dashboard.
 6. Live trading, small size, only after sustained paper-trading validation.
@@ -35,10 +35,14 @@ notebooks/     exploration and result plots
 .venv\Scripts\activate
 python run_backtest.py --ticker AAPL --start 2018-01-01 --end 2024-01-01
 python run_backtest.py --ticker RELIANCE.NS --short-window 10 --long-window 30 --stop-loss-pct 0.03
+python run_backtest.py --ticker AAPL --ai-journal   # + a Claude-written review of the trade log
 ```
 
 Prints a strategy-vs-buy-and-hold metrics comparison and the most recent trades, and saves an
-equity curve chart to `results/` (gitignored — regenerate anytime).
+equity curve chart to `results/` (gitignored — regenerate anytime). `--ai-journal` additionally
+asks Claude to review the trade log in plain English and saves it to `results/<ticker>_trade_journal.md`
+— needs `ANTHROPIC_API_KEY` set in `.env`; without it, the flag just prints a skip notice rather
+than failing the run.
 
 ## Running tests
 
