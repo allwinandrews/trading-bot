@@ -1,0 +1,10 @@
+pandas
+numpy
+yfinance
+matplotlib
+plotly
+streamlit
+python-dotenv
+ib_insync
+anthropic
+jupyter
