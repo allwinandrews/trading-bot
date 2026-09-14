@@ -8,3 +8,4 @@ python-dotenv
 ib_insync
 anthropic
 jupyter
+pytest

@@ -12,6 +12,12 @@ venv/
 data/*.csv
 data/*.parquet
 
+# Backtest outputs (regenerable)
+results/
+
+# Pytest
+.pytest_cache/
+
 # Jupyter
 .ipynb_checkpoints/
 
