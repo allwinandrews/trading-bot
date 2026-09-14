@@ -12,11 +12,14 @@ from __future__ import annotations
 
 import pandas as pd
 
+DEFAULT_SHORT_WINDOW = 20
+DEFAULT_LONG_WINDOW = 50
+
 
 def generate_signals(
     prices: pd.DataFrame,
-    short_window: int = 20,
-    long_window: int = 50,
+    short_window: int = DEFAULT_SHORT_WINDOW,
+    long_window: int = DEFAULT_LONG_WINDOW,
 ) -> pd.Series:
     """Return a signal series aligned to `prices.index`: 1 = long, 0 = flat.
 

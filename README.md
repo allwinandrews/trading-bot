@@ -5,18 +5,22 @@ data, and (only once proven) run it live through a broker API — with stop-loss
 and a daily loss circuit breaker built in from the start. Includes an AI-written trade journal that
 explains why each trade fired.
 
-**Status:** step 1 done — backtester + moving-average strategy + risk layer, tested and working.
+**Status:** backtester, risk layer, AI trade journal, and dashboard all working. Paper/live
+trading (execution/) is next, blocked on an Interactive Brokers account being set up.
 
 ## Project structure
 
 ```
-data/          downloaded historical price data (gitignored)
-strategies/    strategy logic (signal generation only — no execution)
-backtester/    simulates a strategy against historical data, tracks equity/drawdown
-risk/          stop-loss, position sizing, daily loss circuit breaker
-execution/     broker API wrapper — paper mode and live mode
-ai/            trade journal / sentiment layer (Anthropic API)
-notebooks/     exploration and result plots
+data/               downloaded historical price data (gitignored) + loader.py
+strategies/         strategy logic (signal generation only — no execution)
+backtester/         engine.py (simulation), metrics.py (scoring), runner.py (shared orchestration)
+risk/               stop-loss, position sizing, daily loss circuit breaker
+execution/          broker API wrapper — paper mode and live mode (not yet built)
+ai/                 trade journal / sentiment layer (Anthropic API)
+notebooks/          exploration and result plots
+tests/              pytest suite — synthetic data, no network dependency
+run_backtest.py     CLI entry point
+dashboard.py        Streamlit dashboard (interactive version of the same backtest)
 ```
 
 ## Build order
@@ -25,8 +29,8 @@ notebooks/     exploration and result plots
    stop-loss and fixed-fractional position sizing baked in — no API keys needed.
 2. ✅ Comparison against buy-and-hold (built into `run_backtest.py`'s output).
 3. ✅ AI trade journal on top of backtest results (`--ai-journal`, needs `ANTHROPIC_API_KEY`).
-4. Paper trading against live data (Interactive Brokers).
-5. Streamlit dashboard.
+4. ✅ Streamlit dashboard (`streamlit run dashboard.py`) — interactive version of the same backtest.
+5. Paper trading against live data (Interactive Brokers) — **blocked on an IBKR account being set up**.
 6. Live trading, small size, only after sustained paper-trading validation.
 
 ## Running a backtest
@@ -43,6 +47,15 @@ equity curve chart to `results/` (gitignored — regenerate anytime). `--ai-jour
 asks Claude to review the trade log in plain English and saves it to `results/<ticker>_trade_journal.md`
 — needs `ANTHROPIC_API_KEY` set in `.env`; without it, the flag just prints a skip notice rather
 than failing the run.
+
+## Running the dashboard
+
+```bash
+streamlit run dashboard.py
+```
+
+Same backtest engine as the CLI, with sliders for strategy/risk parameters, an interactive
+equity curve, a downloadable trade log, and an optional AI trade journal checkbox.
 
 ## Running tests
 
