@@ -6,6 +6,6 @@ plotly
 streamlit
 python-dotenv
 ib_insync
-anthropic
+google-genai
 jupyter
 pytest

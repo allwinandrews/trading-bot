@@ -15,13 +15,24 @@ from dataclasses import dataclass
 
 import pandas as pd
 
+from backtester.costs import ibkr_commission
 from risk.position_sizing import shares_for_fixed_risk
 from risk.stops import fixed_stop_price
+
+
+def _commission(shares: float, price: float, commission_pct: float | None) -> float:
+    """Cost of one fill — IBKR's real schedule unless a flat rate is forced."""
+    if commission_pct is None:
+        return ibkr_commission(shares, price)
+    return shares * price * commission_pct
 
 DEFAULT_INITIAL_CAPITAL = 100_000.0
 DEFAULT_STOP_LOSS_PCT = 0.02
 DEFAULT_RISK_PER_TRADE_PCT = 0.01
-DEFAULT_COMMISSION_PCT = 0.001
+# None = model IBKR's real fee schedule (backtester/costs.py), where the
+# effective rate depends on trade size. A flat rate was the old default and
+# understated costs ~10x at small trade sizes; pass a float to force one.
+DEFAULT_COMMISSION_PCT = None
 
 
 @dataclass
@@ -48,7 +59,7 @@ def run_backtest(
     initial_capital: float = DEFAULT_INITIAL_CAPITAL,
     stop_loss_pct: float = DEFAULT_STOP_LOSS_PCT,
     risk_per_trade_pct: float = DEFAULT_RISK_PER_TRADE_PCT,
-    commission_pct: float = DEFAULT_COMMISSION_PCT,
+    commission_pct: float | None = DEFAULT_COMMISSION_PCT,
 ) -> BacktestResult:
     """Simulate `signals` (1=long, 0=flat) against `prices` (needs Open/High/Low/Close)."""
     cash = initial_capital
@@ -76,19 +87,19 @@ def run_backtest(
             shares = shares_for_fixed_risk(cash, o, stop_price, risk_per_trade_pct)
             if shares > 0:
                 cost = shares * o
-                cash -= cost * (1 + commission_pct)
+                cash -= cost + _commission(shares, o, commission_pct)
                 in_position = True
                 entry_price = o
                 entry_date = date
         elif in_position and signal_prev == 0:
-            cash += shares * o * (1 - commission_pct)
+            cash += shares * o - _commission(shares, o, commission_pct)
             trades.append(_trade_record(entry_date, entry_price, date, o, shares, "signal_exit"))
             in_position = False
             shares = 0
 
         # 2. Stop-loss check, intrabar, only if still in a position.
         if in_position and l <= stop_price:
-            cash += shares * stop_price * (1 - commission_pct)
+            cash += shares * stop_price - _commission(shares, stop_price, commission_pct)
             trades.append(
                 _trade_record(entry_date, entry_price, date, stop_price, shares, "stop_loss")
             )

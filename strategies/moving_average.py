@@ -12,8 +12,15 @@ from __future__ import annotations
 
 import pandas as pd
 
-DEFAULT_SHORT_WINDOW = 20
-DEFAULT_LONG_WINDOW = 50
+DEFAULT_SHORT_WINDOW = 50
+DEFAULT_LONG_WINDOW = 200
+
+# Faster crossover for a swing-trading variant of the same strategy: reacts
+# to trend changes in days/weeks rather than months, at the cost of more
+# whipsaw trades in choppy markets. Same generate_signals() function, just
+# different windows — see pages/7_Swing_Autopilot.py.
+DEFAULT_SWING_SHORT_WINDOW = 10
+DEFAULT_SWING_LONG_WINDOW = 30
 
 
 def generate_signals(

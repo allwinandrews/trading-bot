@@ -15,6 +15,12 @@ data/*.parquet
 # Backtest outputs (regenerable)
 results/
 
+# Live/paper trading history (local state, regenerable by running the bot)
+execution/live_data/
+
+# Autopilot startup log (regenerable, local to this machine)
+autopilot.log
+
 # Pytest
 .pytest_cache/
 
@@ -24,3 +30,7 @@ results/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local autopilot logs and machine-specific launcher
+*.log
+autopilot_start.bat

@@ -42,11 +42,15 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--initial-capital", type=float, default=DEFAULT_INITIAL_CAPITAL)
     p.add_argument("--stop-loss-pct", type=float, default=DEFAULT_STOP_LOSS_PCT)
     p.add_argument("--risk-per-trade-pct", type=float, default=DEFAULT_RISK_PER_TRADE_PCT)
-    p.add_argument("--commission-pct", type=float, default=DEFAULT_COMMISSION_PCT)
+    p.add_argument(
+        "--commission-pct", type=float, default=DEFAULT_COMMISSION_PCT,
+        help="Force a flat commission rate. Default models IBKR's real fee schedule "
+             "(per-share, $1 minimum, 1%% cap) where the effective rate depends on trade size.",
+    )
     p.add_argument("--no-plot", action="store_true", help="Skip saving the equity curve chart")
     p.add_argument(
         "--ai-journal", action="store_true",
-        help="Ask Claude to write a plain-English review of the trade log (needs ANTHROPIC_API_KEY)",
+        help="Ask Gemini to write a plain-English review of the trade log (needs GEMINI_API_KEY)",
     )
     return p.parse_args()
 

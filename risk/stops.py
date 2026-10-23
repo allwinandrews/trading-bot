@@ -8,17 +8,26 @@ from __future__ import annotations
 
 
 def fixed_stop_price(entry_price: float, stop_loss_pct: float) -> float:
-    """Stop price for a long position, `stop_loss_pct` below entry (e.g. 0.02 = 2%)."""
+    """Stop price for a long position, `stop_loss_pct` below entry (e.g. 0.02 = 2%).
+
+    Rounded to cents: US equities trade in $0.01 increments, and a broker
+    will reject (or silently leave pending, as IBKR does) a stop order at
+    a price with more precision than that — see execution/broker.py's
+    _wait_for_acknowledgement for what that failure mode looks like live.
+    """
     if not (0 < stop_loss_pct < 1):
         raise ValueError("stop_loss_pct must be between 0 and 1")
-    return entry_price * (1 - stop_loss_pct)
+    return round(entry_price * (1 - stop_loss_pct), 2)
 
 
 def trailing_stop_price(highest_price_since_entry: float, stop_loss_pct: float) -> float:
-    """Trailing stop for a long position: stop_loss_pct below the highest price seen so far."""
+    """Trailing stop for a long position: stop_loss_pct below the highest price seen so far.
+
+    Rounded to cents — see fixed_stop_price.
+    """
     if not (0 < stop_loss_pct < 1):
         raise ValueError("stop_loss_pct must be between 0 and 1")
-    return highest_price_since_entry * (1 - stop_loss_pct)
+    return round(highest_price_since_entry * (1 - stop_loss_pct), 2)
 
 
 class DailyLossCircuitBreaker:

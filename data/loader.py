@@ -6,12 +6,42 @@ through here rather than each calling yfinance directly.
 """
 from __future__ import annotations
 
+import concurrent.futures
 from pathlib import Path
 
 import pandas as pd
 import yfinance as yf
 
 CACHE_DIR = Path(__file__).parent
+
+# Real incident: a background worker hung for two full days on a single
+# yf.download() call despite yfinance's own internal timeout=10 default —
+# that default doesn't reliably bound an internal retry/rate-limit loop.
+# This is an external wall-clock backstop so a stuck download can never
+# again silently freeze a process (including the live trading bot) with no
+# indication beyond "still running" in the OS process list.
+DOWNLOAD_TIMEOUT_SECONDS = 30
+
+
+def _download_with_watchdog(*args, **kwargs):
+    """Run yf.download with a hard external timeout.
+
+    Python can't forcibly kill a thread, so on timeout the underlying call
+    is abandoned (left running in the background, harmless — it just never
+    reports back) rather than awaited — the point is that the *caller*
+    reliably gets control back, not that the stuck request stops.
+    """
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    future = pool.submit(yf.download, *args, **kwargs)
+    try:
+        return future.result(timeout=DOWNLOAD_TIMEOUT_SECONDS)
+    except concurrent.futures.TimeoutError:
+        raise TimeoutError(
+            f"Price data download timed out after {DOWNLOAD_TIMEOUT_SECONDS}s — "
+            "Yahoo Finance may be rate-limiting or unresponsive."
+        ) from None
+    finally:
+        pool.shutdown(wait=False)
 
 
 def _cache_path(ticker: str, start: str, end: str, interval: str) -> Path:
@@ -39,7 +69,7 @@ def load_price_data(
         if not df.empty:
             return df
 
-    df = yf.download(
+    df = _download_with_watchdog(
         ticker,
         start=start,
         end=end,
